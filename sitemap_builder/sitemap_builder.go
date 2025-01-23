@@ -48,8 +48,8 @@ func findAllDomainLinks(rootUrl string) []Url {
 		htmlPage := getHtmlFromUrl(url)                            // get html page by visiting url page
 		links := html_link_parser.GetLinksFromHtmlString(htmlPage) // get all links from  html page
 		for _, link := range links {                               // for each link in links
-			href := link.Href // get link's href
-			if href == "" {   // if no href
+			href := link.Href                              // get link's href
+			if href == "" || strings.Contains(href, "#") { // if no href or href is html id
 				continue // check next link
 			}
 			targetUrl := href        // set targetUrl to href
