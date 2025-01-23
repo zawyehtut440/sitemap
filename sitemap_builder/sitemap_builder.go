@@ -14,7 +14,7 @@ import (
 type Sitemap struct {
 	XMLName  xml.Name `xml:"urlset"`
 	Protocol string   `xml:"xmlns,attr"`
-	Urls     []Url    `xml:"url>url"`
+	Urls     []Url    `xml:"url"`
 }
 
 type Url struct {
@@ -22,17 +22,13 @@ type Url struct {
 }
 
 func CreateSitemap(rootUrl string) string {
-	u := findAllDomainLinks(rootUrl)
-	fmt.Println(u)
-	return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-	<url>
-		<loc>http://www.example.com/</loc>
-	</url>
-	<url>
-		<loc>http://www.example.com/dogs</loc>
-	</url>
-</urlset>`
+	sitemap := &Sitemap{Protocol: "http://www.sitemaps.org/schemas/sitemap/0.9"}
+	if rootUrl[len(rootUrl)-1] == '/' {
+		rootUrl = rootUrl[:len(rootUrl)-1]
+	}
+	sitemap.Urls = findAllDomainLinks(rootUrl)
+	out, _ := xml.MarshalIndent(sitemap, "", "    ")
+	return xml.Header + string(out)
 }
 
 func findAllDomainLinks(rootUrl string) []Url {
