@@ -14,6 +14,10 @@ func NewQueue[T any]() *Queue[T] {
 	}
 }
 
+func (q *Queue[T]) GetSize() int {
+	return q.size
+}
+
 func (q *Queue[T]) EnqueueElements(values []T) {
 	q.elements = append(q.elements, values...)
 	q.size += len(values)

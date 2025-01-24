@@ -21,17 +21,17 @@ type Url struct {
 	Loc string `xml:"loc"`
 }
 
-func CreateSitemap(rootUrl string) string {
+func CreateSitemap(rootUrl string, depth int) string {
 	sitemap := &Sitemap{Protocol: "http://www.sitemaps.org/schemas/sitemap/0.9"}
 	if rootUrl[len(rootUrl)-1] == '/' {
 		rootUrl = rootUrl[:len(rootUrl)-1]
 	}
-	sitemap.Urls = findAllDomainLinks(rootUrl)
+	sitemap.Urls = findAllDomainLinks(rootUrl, depth)
 	out, _ := xml.MarshalIndent(sitemap, "", "    ")
 	return xml.Header + string(out)
 }
 
-func findAllDomainLinks(rootUrl string) []Url {
+func findAllDomainLinks(rootUrl string, depth int) []Url {
 	validUrls := make([]Url, 0)
 
 	// using queue to visit all the websites, for each website url is unique and in the same domain
@@ -39,8 +39,17 @@ func findAllDomainLinks(rootUrl string) []Url {
 	urlQueue.Enqueue(rootUrl)                   // find root url first
 	visited := data_structures.NewSet[string]() // visited: url that have already visited
 
-	for !urlQueue.IsEmpty() { // while urlQueue is not empty
-		url, _ := urlQueue.Dequeue()                               // get url from urlQueue
+	degree, degreeCount := 1, urlQueue.GetSize() // current degree that we are working
+	nextDegreeCount := 0                         // to know whether is in current degree or next
+
+	for !urlQueue.IsEmpty() && degree <= depth { // while urlQueue is not empty
+		if degreeCount == 0 {
+			degreeCount = nextDegreeCount
+			nextDegreeCount = 0
+			degree += 1
+		}
+		url, _ := urlQueue.Dequeue() // get url from urlQueue
+		degreeCount -= 1
 		htmlPage := getHtmlFromUrl(url)                            // get html page by visiting url page
 		links := html_link_parser.GetLinksFromHtmlString(htmlPage) // get all links from  html page
 		for _, link := range links {                               // for each link in links
@@ -53,6 +62,7 @@ func findAllDomainLinks(rootUrl string) []Url {
 			if !visited.Contains(targetUrl) && strings.HasPrefix(targetUrl, rootUrl) { // if link haven't visited yet and is same domain as rootUrl
 				fmt.Println(targetUrl)
 				urlQueue.Enqueue(targetUrl)                        // add to urlQueue
+				nextDegreeCount += 1                               // the number of enqueue, is equal to nextDegreeCount in the same degree
 				visited.Add(targetUrl)                             // targetUrl is visited
 				validUrls = append(validUrls, Url{Loc: targetUrl}) // add targetUrl
 			}
