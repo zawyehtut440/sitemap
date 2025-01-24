@@ -44,14 +44,11 @@ func findAllDomainLinks(rootUrl string) []Url {
 		htmlPage := getHtmlFromUrl(url)                            // get html page by visiting url page
 		links := html_link_parser.GetLinksFromHtmlString(htmlPage) // get all links from  html page
 		for _, link := range links {                               // for each link in links
-			href := link.Href                              // get link's href
-			if href == "" || strings.Contains(href, "#") { // if no href or href is html id
+			href := link.Href      // get link's href
+			if canSkipHref(href) { // if href can be skipped
 				continue // check next link
 			}
-			targetUrl := href        // set targetUrl to href
-			if targetUrl[0] == '/' { // if tartgetUrl is like "/about"
-				targetUrl = rootUrl + targetUrl // prefix the domain, so make this targetUrl like "rootUrl/about"
-			}
+			targetUrl := formatUrl(href, rootUrl) // get full url
 
 			if !visited.Contains(targetUrl) && strings.HasPrefix(targetUrl, rootUrl) { // if link haven't visited yet and is same domain as rootUrl
 				fmt.Println(targetUrl)
@@ -63,6 +60,31 @@ func findAllDomainLinks(rootUrl string) []Url {
 	}
 
 	return validUrls
+}
+
+func canSkipHref(href string) bool {
+	// if href is empty or href is html id or href is prefix with mailto:
+	return href == "" || strings.Contains(href, "#") || strings.HasPrefix(href, "mailto:")
+}
+
+// get full url of href
+func formatUrl(href, rootUrl string) string {
+	// if href have full url with porefix protocol like https or http
+	if strings.HasPrefix(href, "https://") || strings.HasPrefix(href, "http://") {
+		return href // href is full url
+	}
+
+	if href[0] == '.' {
+		href = href[1:]
+	}
+
+	if href[0] == '/' { // if href is like "/about"
+		href = rootUrl + href // prefix the domain, so make this href like "rootUrl/about"
+	} else {
+		href = rootUrl + "/" + href
+	}
+
+	return href
 }
 
 // url: 要找的網頁
